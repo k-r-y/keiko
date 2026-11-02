@@ -69,7 +69,6 @@ export default function IDETitleBar({
             className="font-semibold text-xs sm:text-sm text-[#f5f5f7] tracking-tight hover:text-white transition-colors cursor-pointer flex items-center gap-1"
           >
             <span>Keiko</span>
-            <span className="hidden sm:inline text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-white/[0.08] border border-white/10 text-[#86868b] font-normal uppercase">Pro</span>
           </button>
           
           {activeMode === 'lessons' && (
