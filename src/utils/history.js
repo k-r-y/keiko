@@ -1,8 +1,10 @@
-// Persistent LocalStorage History and Lifetime Analytics for TermType
+// Persistent LocalStorage History and Lifetime Analytics for Keiko
 // Inspired by Typing.com developer metrics
 
-const STORAGE_KEY_TESTS = 'termtype_test_history';
-const STORAGE_KEY_STATS = 'termtype_lifetime_stats';
+const STORAGE_KEY_TESTS = 'keiko_test_history';
+const STORAGE_KEY_STATS = 'keiko_lifetime_stats';
+const LEGACY_STORAGE_KEY_TESTS = 'termtype_test_history';
+const LEGACY_STORAGE_KEY_STATS = 'termtype_lifetime_stats';
 
 // Save a completed test run
 export function saveTestResult({
@@ -47,7 +49,7 @@ export function saveTestResult({
 // Retrieve test history
 export function getTestHistory() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_TESTS);
+    const raw = localStorage.getItem(STORAGE_KEY_TESTS) || localStorage.getItem(LEGACY_STORAGE_KEY_TESTS);
     if (!raw) return [];
     return JSON.parse(raw);
   } catch (err) {
@@ -205,6 +207,8 @@ export function clearTestHistory() {
   try {
     localStorage.removeItem(STORAGE_KEY_TESTS);
     localStorage.removeItem(STORAGE_KEY_STATS);
+    localStorage.removeItem(LEGACY_STORAGE_KEY_TESTS);
+    localStorage.removeItem(LEGACY_STORAGE_KEY_STATS);
     return true;
   } catch (err) {
     console.error('Failed to clear history', err);

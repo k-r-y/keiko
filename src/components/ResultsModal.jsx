@@ -42,7 +42,7 @@ export default function ResultsModal({
   if (!isOpen) return null;
 
   const handleShare = () => {
-    const text = `TermType Pro // Verification:\n• Module: ${snippet?.filename || snippet?.title}\n• Velocity: ${stats.netWpm} WPM\n• Precision: ${stats.accuracy}%\n• Time: ${stats.elapsedSeconds}s\nMaster software engineering through authentic typing.`;
+    const text = `Keiko Pro // Verification:\n• Module: ${snippet?.filename || snippet?.title}\n• Velocity: ${stats.netWpm} WPM\n• Precision: ${stats.accuracy}%\n• Time: ${stats.elapsedSeconds}s\nMaster software engineering through authentic typing.`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);

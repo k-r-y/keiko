@@ -36,7 +36,7 @@ export function useDebounce(value, delay = 300) {
     content: `from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-app = FastAPI(title="TermType Service")
+app = FastAPI(title="Keiko Service")
 
 class ItemPayload(BaseModel):
     name: str
@@ -69,7 +69,7 @@ interface Repository<T extends Entity> {
 
 class UserRepository implements Repository<{ id: number; email: string }> {
   async findById(id: number) {
-    return { id, email: "developer@termtype.dev" };
+    return { id, email: "developer@keiko.dev" };
   }
   async save(user: { id: number; email: string }) {
     return user;
@@ -84,7 +84,7 @@ class UserRepository implements Repository<{ id: number; email: string }> {
     category: 'Backend API',
     difficulty: 'Medium',
     task: 'Type a Spring Boot REST API controller with dependency injection.',
-    content: `package dev.termtype.api;
+    content: `package dev.keiko.api;
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
@@ -304,15 +304,15 @@ set -euo pipefail
 cleanup() {
     local exit_code=\$?
     echo "Cleaning temporary build artifacts (Exit: \${exit_code})..."
-    rm -rf /tmp/termtype-build-*
+    rm -rf /tmp/keiko-build-*
 }
 trap cleanup EXIT
 
 echo "Starting container deployment pipeline..."
 DEPLOY_TAG=\${1:-"latest"}
-echo "Successfully built image: termtype:\${DEPLOY_TAG}"`,
+echo "Successfully built image: keiko:\${DEPLOY_TAG}"`,
     expectedOutput: `Starting container deployment pipeline...
-Successfully built image: termtype:latest
+Successfully built image: keiko:latest
 Cleaning temporary build artifacts (Exit: 0)...`,
   },
 ];

@@ -496,8 +496,8 @@ export const CURRICULUM = {
         "Use ts-node for direct execution of TypeScript in development."
       ],
       "pitfalls": "Avoid overusing the any type, as it disables all type checking safety.",
-      "content": "const appTitle: string = \"TermType Studio\";\nconst releaseVersion: number = 2.4;\nconst isProductionReady: boolean = true;\n\nconsole.log(`Running ${appTitle} v${releaseVersion} (Prod: ${isProductionReady})`);",
-      "expectedOutput": "Running TermType Studio v2.4 (Prod: true)"
+      "content": "const appTitle: string = \"Keiko Studio\";\nconst releaseVersion: number = 2.4;\nconst isProductionReady: boolean = true;\n\nconsole.log(`Running ${appTitle} v${releaseVersion} (Prod: ${isProductionReady})`);",
+      "expectedOutput": "Running Keiko Studio v2.4 (Prod: true)"
     },
     {
       "id": "ts-02-variables",

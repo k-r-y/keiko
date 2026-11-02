@@ -1,4 +1,4 @@
-# TermType IDE ⚡ Learn Programming by Typing Real Code
+# Keiko IDE ⚡ Learn Programming by Typing Real Code
 
 A modern, minimalist, Awwwards-inspired **interactive IDE typing platform**. Designed specifically for people who want to learn programming from scratch, build muscle memory, and understand whether they are doing things right—by **typing real code, seeing real output, and learning by doing**.
 
@@ -10,7 +10,7 @@ Built with **React 19**, **Tailwind CSS v4**, and **Vite** (pure modern JavaScri
 
 Most typing tests drill random English words or out-of-context phrases. Most coding tutorials force you to passively watch videos without building typing muscle memory.
 
-**TermType IDE** unifies both worlds:
+**Keiko IDE** unifies both worlds:
 1. **You practice typing by typing actual code.**
 2. **You learn programming step-by-step (Easy → Advanced).**
 3. **An integrated terminal console executes and visualizes your code output.**

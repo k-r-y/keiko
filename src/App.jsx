@@ -20,42 +20,42 @@ import { ArrowLeft, Timer, Code2 } from 'lucide-react';
 export default function App() {
   // Theme & Sound Preferences
   const [currentTheme, setCurrentTheme] = useState(() => {
-    return localStorage.getItem('termtype_theme') || 'apple';
+    return localStorage.getItem('keiko_theme') || localStorage.getItem('termtype_theme') || 'apple';
   });
   const [soundProfile, setSoundProfile] = useState(() => {
-    return localStorage.getItem('termtype_sound') || 'modern-scissor';
+    return localStorage.getItem('keiko_sound') || localStorage.getItem('termtype_sound') || 'modern-scissor';
   });
   const [volume, setVolume] = useState(() => {
-    const saved = localStorage.getItem('termtype_vol');
+    const saved = localStorage.getItem('keiko_vol') || localStorage.getItem('termtype_vol');
     return saved !== null ? parseFloat(saved) : 0.22;
   });
 
   // UX Readability Preferences
   const [fontSize, setFontSize] = useState(() => {
-    return localStorage.getItem('termtype_font_size') || 'large';
+    return localStorage.getItem('keiko_font_size') || localStorage.getItem('termtype_font_size') || 'large';
   });
   const [highContrast, setHighContrast] = useState(() => {
-    const saved = localStorage.getItem('termtype_high_contrast');
+    const saved = localStorage.getItem('keiko_high_contrast') || localStorage.getItem('termtype_high_contrast');
     return saved !== null ? saved === 'true' : true;
   });
 
   // Active App Navigation Mode ('lessons' | 'tests' | 'playground' | 'stats')
   const [activeMode, setActiveMode] = useState(() => {
-    return localStorage.getItem('termtype_mode') || 'lessons';
+    return localStorage.getItem('keiko_mode') || localStorage.getItem('termtype_mode') || 'lessons';
   });
 
   // Active Curriculum Language & Lesson
   const [currentLanguage, setCurrentLanguage] = useState(() => {
-    return localStorage.getItem('termtype_language') || 'python';
+    return localStorage.getItem('keiko_language') || localStorage.getItem('termtype_language') || 'python';
   });
   const [currentLessonId, setCurrentLessonId] = useState(() => {
-    return localStorage.getItem('termtype_current_lesson') || 'py-01-print';
+    return localStorage.getItem('keiko_current_lesson') || localStorage.getItem('termtype_current_lesson') || 'py-01-print';
   });
 
   // Completed Lessons Tracking
   const [completedLessonIds, setCompletedLessonIds] = useState(() => {
     try {
-      const saved = localStorage.getItem('termtype_completed_lessons');
+      const saved = localStorage.getItem('keiko_completed_lessons') || localStorage.getItem('termtype_completed_lessons');
       return saved ? new Set(JSON.parse(saved)) : new Set();
     } catch {
       return new Set();
@@ -83,39 +83,39 @@ export default function App() {
 
   // Persist settings
   useEffect(() => {
-    localStorage.setItem('termtype_theme', currentTheme);
+    localStorage.setItem('keiko_theme', currentTheme);
   }, [currentTheme]);
 
   useEffect(() => {
-    localStorage.setItem('termtype_sound', soundProfile);
+    localStorage.setItem('keiko_sound', soundProfile);
   }, [soundProfile]);
 
   useEffect(() => {
-    localStorage.setItem('termtype_vol', volume.toString());
+    localStorage.setItem('keiko_vol', volume.toString());
   }, [volume]);
 
   useEffect(() => {
-    localStorage.setItem('termtype_font_size', fontSize);
+    localStorage.setItem('keiko_font_size', fontSize);
   }, [fontSize]);
 
   useEffect(() => {
-    localStorage.setItem('termtype_high_contrast', highContrast.toString());
+    localStorage.setItem('keiko_high_contrast', highContrast.toString());
   }, [highContrast]);
 
   useEffect(() => {
-    localStorage.setItem('termtype_mode', activeMode);
+    localStorage.setItem('keiko_mode', activeMode);
   }, [activeMode]);
 
   useEffect(() => {
-    localStorage.setItem('termtype_language', currentLanguage);
+    localStorage.setItem('keiko_language', currentLanguage);
   }, [currentLanguage]);
 
   useEffect(() => {
-    localStorage.setItem('termtype_current_lesson', currentLessonId);
+    localStorage.setItem('keiko_current_lesson', currentLessonId);
   }, [currentLessonId]);
 
   useEffect(() => {
-    localStorage.setItem('termtype_completed_lessons', JSON.stringify(Array.from(completedLessonIds)));
+    localStorage.setItem('keiko_completed_lessons', JSON.stringify(Array.from(completedLessonIds)));
   }, [completedLessonIds]);
 
   // Current language lessons
