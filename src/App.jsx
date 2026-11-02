@@ -189,6 +189,9 @@ export default function App() {
     stats,
     timeLeft,
     handleKeyDown,
+    handleBeforeInput,
+    handleInput,
+    handleCompositionEnd,
     resetTest,
     runCode,
   } = useTypingEngine({
@@ -432,6 +435,9 @@ export default function App() {
                 cursorIndex={cursorIndex}
                 status={status}
                 onKeyDown={handleKeyDown}
+                onBeforeInput={handleBeforeInput}
+                onInput={handleInput}
+                onCompositionEnd={handleCompositionEnd}
                 onReset={handleRestart}
                 onRun={handleRunCode}
                 isExecuting={isExecuting}

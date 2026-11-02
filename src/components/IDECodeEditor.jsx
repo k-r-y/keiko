@@ -8,6 +8,9 @@ export default function IDECodeEditor({
   cursorIndex,
   status,
   onKeyDown,
+  onBeforeInput,
+  onInput,
+  onCompositionEnd,
   fontSize = 'large',
   highContrast = true,
 }) {
@@ -70,8 +73,21 @@ export default function IDECodeEditor({
       <input
         ref={hiddenInputRef}
         type="text"
-        className="opacity-0 absolute top-0 left-0 h-0 w-0 pointer-events-none"
+        inputMode="text"
+        autoCapitalize="none"
+        autoComplete="off"
+        autoCorrect="off"
+        spellCheck={false}
+        data-gramm="false"
+        data-gramm_editor="false"
+        data-enable-grammarly="false"
+        enterKeyHint="go"
+        aria-label="Code Editor Typing Input"
+        className="opacity-0 absolute top-0 left-0 w-px h-px pointer-events-none -z-10"
         onKeyDown={onKeyDown}
+        onBeforeInput={onBeforeInput}
+        onInput={onInput}
+        onCompositionEnd={onCompositionEnd}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         autoFocus

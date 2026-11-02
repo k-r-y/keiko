@@ -192,27 +192,13 @@ export function useTypingEngine({
     }
   }, [errorCount, errorKeys, onComplete, startTime, targetText, totalKeyStrokes, userInput]);
 
-  const handleKeyDown = useCallback(
-    (e) => {
-      // Don't capture shortcuts like Cmd+R, Ctrl+C, etc.
-      if (e.metaKey || e.ctrlKey || e.altKey) {
-        if (e.key === 'Backspace' && (e.metaKey || e.altKey || e.ctrlKey)) {
-          e.preventDefault();
-          let newLength = userInput.lastIndexOf(' ', userInput.length - 2) + 1;
-          if (newLength < 0) newLength = 0;
-          setUserInput((prev) => prev.slice(0, newLength));
-          setCursorIndex(newLength);
-          return;
-        }
-        return;
-      }
+  const lastInputTimestampRef = useRef(0);
+  const lastBackspaceTimestampRef = useRef(0);
 
-      // Ignore single modifier keys
-      if (['Shift', 'CapsLock', 'Control', 'Alt', 'Meta', 'Escape', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        return;
-      }
-
-      e.preventDefault();
+  // Core processing function for inserting typed characters (single or chunk)
+  const processTypedChunk = useCallback(
+    (chunk) => {
+      if (!chunk) return;
 
       const now = Date.now();
 
@@ -236,50 +222,59 @@ export function useTypingEngine({
 
       if (status === 'completed') return;
 
-      // Handle Backspace
-      if (e.key === 'Backspace') {
-        if (userInput.length > 0) {
-          const nextInput = userInput.slice(0, -1);
-          setUserInput(nextInput);
-          setCursorIndex(nextInput.length);
-          soundEngine.playKeySound(false, false);
+      let currentInput = userInput;
+      let currentIdx = cursorIndex;
+      let newErrors = errorCount;
+      const newErrorKeys = { ...errorKeys };
+      let newTotalStrokes = totalKeyStrokes;
+      let hasError = false;
+
+      for (let i = 0; i < chunk.length; i++) {
+        let ch = chunk[i];
+        if (ch === '\r') continue;
+        if (ch === '\t' || ch === 'Tab') {
+          if (targetText[currentIdx] === '\t') {
+            ch = '\t';
+          } else if (targetText.slice(currentIdx, currentIdx + 4) === '    ') {
+            ch = '    ';
+          } else if (targetText.slice(currentIdx, currentIdx + 2) === '  ') {
+            ch = '  ';
+          } else {
+            ch = '  ';
+          }
         }
-        return;
+
+        newTotalStrokes += 1;
+
+        const expectedChar = targetText.slice(currentIdx, currentIdx + ch.length);
+        const isCorrect = ch === expectedChar;
+
+        if (!isCorrect) {
+          newErrors += 1;
+          const expectedTargetKey = targetText[currentIdx] || 'extra';
+          newErrorKeys[expectedTargetKey] = (newErrorKeys[expectedTargetKey] || 0) + 1;
+          hasError = true;
+        }
+
+        currentInput += ch;
+        currentIdx += ch.length;
       }
 
-      // Handle Tab
-      let typedChar = e.key;
-      if (e.key === 'Tab') {
-        typedChar = targetText[cursorIndex] === '\t' ? '\t' : '  ';
-      } else if (e.key === 'Enter') {
-        typedChar = '\n';
-      }
-
-      // Increment total strokes
-      setTotalKeyStrokes((prev) => prev + 1);
-
-      // Check correctness
-      const expectedChar = targetText.slice(cursorIndex, cursorIndex + typedChar.length);
-      const isCorrect = typedChar === expectedChar;
-
-      if (!isCorrect) {
-        setErrorCount((prev) => prev + 1);
-        const expectedTargetKey = targetText[cursorIndex] || 'extra';
-        setErrorKeys((prev) => ({
-          ...prev,
-          [expectedTargetKey]: (prev[expectedTargetKey] || 0) + 1,
-        }));
+      if (hasError) {
         soundEngine.playErrorSound();
       } else {
-        soundEngine.playKeySound(typedChar === ' ', typedChar === '\n');
+        const lastChar = chunk[chunk.length - 1];
+        soundEngine.playKeySound(lastChar === ' ', lastChar === '\n');
       }
 
-      const nextInput = userInput + typedChar;
-      setUserInput(nextInput);
-      setCursorIndex(nextInput.length);
+      setTotalKeyStrokes(newTotalStrokes);
+      setErrorCount(newErrors);
+      setErrorKeys(newErrorKeys);
+      setUserInput(currentInput);
+      setCursorIndex(currentIdx);
 
       // Check if finished (in snippet completion mode)
-      if (timeLimit === 0 && nextInput.length >= targetText.length) {
+      if (timeLimit === 0 && currentInput.length >= targetText.length) {
         const finishTimestamp = Date.now();
         setEndTime(finishTimestamp);
         setStatus('completed');
@@ -297,20 +292,208 @@ export function useTypingEngine({
 
         if (onComplete) {
           const finalStats = calculateStats({
-            input: nextInput,
+            input: currentInput,
             target: targetText,
-            totalKeyStrokes: totalKeyStrokes + 1,
-            errorCount: isCorrect ? errorCount : errorCount + 1,
+            totalKeyStrokes: newTotalStrokes,
+            errorCount: newErrors,
             startTime: currentStartTime,
             endTime: finishTimestamp,
-            errorKeys,
+            errorKeys: newErrorKeys,
             activeSeconds: finalActiveSecs,
           });
           onComplete(finalStats);
         }
       }
     },
-    [cursorIndex, errorCount, errorKeys, onComplete, startTime, status, isPaused, targetText, timeLimit, totalKeyStrokes, userInput]
+    [cursorIndex, errorCount, errorKeys, isPaused, onComplete, startTime, status, targetText, timeLimit, totalKeyStrokes, userInput]
+  );
+
+  // Core processing function for backspacing
+  const processBackspace = useCallback(() => {
+    const now = Date.now();
+    if (status === 'running') {
+      if (isPaused) {
+        setIsPaused(false);
+        currentBurstStartRef.current = now;
+      }
+      lastKeyTimeRef.current = now;
+    }
+
+    if (status === 'completed') return;
+
+    if (userInput.length > 0) {
+      const nextInput = userInput.slice(0, -1);
+      setUserInput(nextInput);
+      setCursorIndex(nextInput.length);
+      soundEngine.playKeySound(false, false);
+    }
+  }, [isPaused, status, userInput]);
+
+  const handleKeyDown = useCallback(
+    (e) => {
+      // Don't capture shortcuts like Cmd+R, Ctrl+C, etc.
+      if (e.metaKey || e.ctrlKey || e.altKey) {
+        if (e.key === 'Backspace' && (e.metaKey || e.altKey || e.ctrlKey)) {
+          e.preventDefault();
+          let newLength = userInput.lastIndexOf(' ', userInput.length - 2) + 1;
+          if (newLength < 0) newLength = 0;
+          setUserInput((prev) => prev.slice(0, newLength));
+          setCursorIndex(newLength);
+          return;
+        }
+        return;
+      }
+
+      // CRITICAL: On Android Chrome & virtual keyboards:
+      // e.key is 'Unidentified' or 'Process', and e.keyCode is 229.
+      // We MUST NOT call preventDefault here, and MUST NOT process "Unidentified" as text!
+      // The browser will fire beforeinput / input with the real typed character.
+      if (e.key === 'Unidentified' || e.key === 'Process' || e.keyCode === 229) {
+        return;
+      }
+
+      // Ignore navigation, function, and modifier keys
+      if (
+        [
+          'Shift',
+          'CapsLock',
+          'Control',
+          'Alt',
+          'Meta',
+          'Escape',
+          'ArrowUp',
+          'ArrowDown',
+          'ArrowLeft',
+          'ArrowRight',
+          'Home',
+          'End',
+          'PageUp',
+          'PageDown',
+          'Insert',
+          'F1',
+          'F2',
+          'F3',
+          'F4',
+          'F5',
+          'F6',
+          'F7',
+          'F8',
+          'F9',
+          'F10',
+          'F11',
+          'F12',
+          'NumLock',
+          'ScrollLock',
+          'Pause',
+          'ContextMenu',
+        ].includes(e.key)
+      ) {
+        return;
+      }
+
+      // Handle Backspace on desktop physical keyboards
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        lastBackspaceTimestampRef.current = Date.now();
+        processBackspace();
+        return;
+      }
+
+      // Handle Tab on desktop physical keyboards
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        lastInputTimestampRef.current = Date.now();
+        processTypedChunk('\t');
+        return;
+      }
+
+      // Handle Enter on desktop physical keyboards
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        lastInputTimestampRef.current = Date.now();
+        processTypedChunk('\n');
+        return;
+      }
+
+      // Regular single printable characters (length === 1)
+      if (e.key.length === 1) {
+        e.preventDefault();
+        lastInputTimestampRef.current = Date.now();
+        processTypedChunk(e.key);
+      }
+    },
+    [processBackspace, processTypedChunk, userInput]
+  );
+
+  const handleBeforeInput = useCallback(
+    (e) => {
+      const now = Date.now();
+
+      // Mobile / Virtual Backspace:
+      if (e.inputType === 'deleteContentBackward' || e.inputType === 'deleteContentForward') {
+        if (e.cancelable) e.preventDefault();
+        if (now - lastBackspaceTimestampRef.current > 40) {
+          lastBackspaceTimestampRef.current = now;
+          processBackspace();
+        }
+        if (e.target) e.target.value = '';
+        return;
+      }
+
+      // Mobile / Virtual Enter / Line break:
+      if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') {
+        if (e.cancelable) e.preventDefault();
+        if (now - lastInputTimestampRef.current > 40) {
+          lastInputTimestampRef.current = now;
+          processTypedChunk('\n');
+        }
+        if (e.target) e.target.value = '';
+        return;
+      }
+
+      // Mobile / Virtual Character or Word Insertion:
+      if (e.data) {
+        if (e.cancelable) e.preventDefault();
+        if (now - lastInputTimestampRef.current > 40) {
+          lastInputTimestampRef.current = now;
+          processTypedChunk(e.data);
+        }
+        if (e.target) e.target.value = '';
+      }
+    },
+    [processBackspace, processTypedChunk]
+  );
+
+  const handleInput = useCallback(
+    (e) => {
+      const val = e.target.value;
+      if (val) {
+        const now = Date.now();
+        if (now - lastInputTimestampRef.current > 40) {
+          lastInputTimestampRef.current = now;
+          processTypedChunk(val);
+        }
+        e.target.value = '';
+      }
+    },
+    [processTypedChunk]
+  );
+
+  const handleCompositionEnd = useCallback(
+    (e) => {
+      const data = e.data;
+      if (data) {
+        const now = Date.now();
+        if (now - lastInputTimestampRef.current > 40) {
+          lastInputTimestampRef.current = now;
+          processTypedChunk(data);
+        }
+      }
+      if (e.target) {
+        e.target.value = '';
+      }
+    },
+    [processTypedChunk]
   );
 
   const stats = calculateStats({
@@ -338,6 +521,9 @@ export function useTypingEngine({
     wpmHistory,
     stats,
     handleKeyDown,
+    handleBeforeInput,
+    handleInput,
+    handleCompositionEnd,
     resetTest,
     runCode,
     finishTest,
