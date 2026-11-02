@@ -15,6 +15,7 @@ import { THEMES } from './utils/themes';
 import { useTypingEngine } from './hooks/useTypingEngine';
 import { soundEngine } from './utils/sound';
 import { saveTestResult } from './utils/history';
+import { executeCode } from './utils/codeRunner';
 import { ArrowLeft, Timer, Code2 } from 'lucide-react';
 
 export default function App() {
@@ -200,19 +201,40 @@ export default function App() {
     onComplete: handleTestComplete,
   });
 
-  // Visual execution state for Run action
+  // Visual execution state for Run action & Real Terminal Output
   const [isExecuting, setIsExecuting] = useState(false);
+  const [terminalExecution, setTerminalExecution] = useState(null);
+
+  // Clear terminal output when active snippet/lesson changes
+  useEffect(() => {
+    setTerminalExecution(null);
+  }, [activeSnippet?.id]);
 
   const handleRunCode = useCallback(() => {
     if (isExecuting) return;
     setIsExecuting(true);
     soundEngine.playKeySound(false, true);
 
+    const result = executeCode({
+      userInput,
+      lesson: activeSnippet,
+      language: activeSnippet?.language || currentLanguage,
+    });
+
     setTimeout(() => {
       setIsExecuting(false);
-      runCode();
-    }, 450);
-  }, [isExecuting, runCode]);
+      setTerminalExecution(result);
+
+      if (result.success) {
+        soundEngine.playKeySound(true, false);
+        if (result.isComplete) {
+          runCode();
+        }
+      } else {
+        soundEngine.playErrorSound();
+      }
+    }, 380);
+  }, [activeSnippet, currentLanguage, isExecuting, runCode, userInput]);
 
   // Action handlers
   const handleSelectLanguage = (langId) => {
@@ -256,6 +278,7 @@ export default function App() {
   };
 
   const handleRestart = () => {
+    setTerminalExecution(null);
     resetTest();
     setIsResultModalOpen(false);
   };
@@ -455,15 +478,17 @@ export default function App() {
               {/* Unified Console Output Directly Beneath Editor */}
               <IDETerminalConsole
                 lesson={activeSnippet}
-                language={activeSnippet.language || currentLanguage}
+                language={activeSnippet?.language || currentLanguage}
                 status={status}
                 stats={stats}
                 userInput={userInput}
-                targetText={activeSnippet.content || ''}
+                targetText={activeSnippet?.content || ''}
                 onNextLesson={handleNextLesson}
                 hasNextLesson={hasNextLesson && !activeOverrideSnippet}
                 onRun={handleRunCode}
                 isExecuting={isExecuting}
+                terminalExecution={terminalExecution}
+                onClearTerminal={() => setTerminalExecution(null)}
                 theme={theme}
               />
             </div>
